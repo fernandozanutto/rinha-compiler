@@ -95,7 +95,7 @@ def interpret_let(term: Let, env: dict):
 
     new_env[term['name']['text']] = value
 
-    interpret(term['next'], new_env)
+    return interpret(term['next'], new_env)
 
 
 def interpret_call(term: Call, env: dict):
