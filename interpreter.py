@@ -87,7 +87,7 @@ def convert_value_to_print(value: Value) -> str:
     if value['kind'] == 'boolean':
         return 'true' if value['value'] else 'false'
 
-    elif value['kind'] in ['string', 'number']:
+    elif value['kind'] in ['string', 'int']:
         return str(value['value'])
 
     elif value['kind'] == 'closure':
@@ -150,9 +150,22 @@ def interpret_call(term: Call, env: Env) -> Value:
     return interpret(closure['body'], fun_env)
 
 
+def add_values(left: Value, right: Value) -> Value:
+    if left['kind'] in ['closure', 'tuple', 'boolean'] or right['kind'] in ['closure', 'tuple', 'boolean']:
+        raise RuntimeError("Cannot ADD types {} and {}".format(left['kind'], right['kind']))
+
+    if left['kind'] == 'string' and right['kind'] == 'string':
+        return {'kind': 'string', 'value': left['value'] + right['value']}
+
+    elif left['kind'] == 'int' and right['kind'] == 'int':
+        return {'kind': 'int', 'value': left['value'] + right['value']}
+
+    else:
+        return {'kind': 'string', 'value': str(left['value']) + str(right['value'])}
+
+
 def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
     binary_op_dict = {
-        'Add': lambda l, r: l + r,
         'Sub': lambda l, r: l - r,
         'Mul': lambda l, r: l * r,
         'Div': lambda l, r: l // r,
@@ -167,17 +180,37 @@ def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
         'Or': lambda l, r: l or r
     }
 
+    if op == 'Add':
+        return add_values(left, right)
+
+    if op != 'Add' and left['kind'] != right['kind']:
+        raise RuntimeError(
+            "Invalid operator {} for arguments with types {} and {}".format(op, left['kind'], right['kind']))
+
+    if op in ['Sub', 'Mul', 'Div', 'Rem'] and left['kind'] != 'int':
+        raise RuntimeError(
+            "Invalid operator {} for arguments with types {} and {}".format(op, left['kind'], right['kind']))
+
+    if op in ['Eq', 'Neq'] and left['kind'] not in ['string', 'int']:
+        raise RuntimeError(
+            "Invalid operator {} for arguments with types {} and {}".format(op, left['kind'], right['kind']))
+
+    if op in ['Lt', 'Gt', 'Lte', 'Gte'] and left['kind'] != 'int':
+        raise RuntimeError(
+            "Invalid operator {} for arguments with types {} and {}".format(op, left['kind'], right['kind']))
+
+    if op in ['And', 'Or'] and left['kind'] != 'boolean':
+        raise RuntimeError(
+            "Invalid operator {} for arguments with types {} and {}".format(op, left['kind'], right['kind']))
+
     operation = binary_op_dict[op]
     result = operation(left['value'], right['value'])
 
+    kind = ''
     if op in ['Eq', 'Neq', 'Lt', 'Gt', 'Lte', 'Gte', 'And', 'Or']:
         kind = 'boolean'
     elif op in ['Sub', 'Mul', 'Div', 'Rem']:
-        kind = 'number'
-    elif left['kind'] == 'number' and right['kind'] == 'number':
-        kind = 'number'
-    else:
-        kind = 'string'
+        kind = 'int'
 
     return {
         'kind': kind,
@@ -226,4 +259,4 @@ class Interpreter:
         self.file: File = json_data
 
     def run(self):
-        interpret(self.file['expression'], {})
+        return interpret(self.file['expression'], {})
