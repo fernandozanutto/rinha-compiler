@@ -155,7 +155,7 @@ def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
         'Add': lambda l, r: l + r,
         'Sub': lambda l, r: l - r,
         'Mul': lambda l, r: l * r,
-        'Div': lambda l, r: l / r,
+        'Div': lambda l, r: l // r,
         'Rem': lambda l, r: l % r,
         'Eq': lambda l, r: l == r,
         'Neq': lambda l, r: l != r,
