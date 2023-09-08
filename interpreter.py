@@ -66,7 +66,7 @@ def interpret_tuple(term: Tuple, env: Env) -> TupleValue:
 
 def assert_tuple(term: TupleValue):
     if term['kind'] != 'tuple':
-        raise Exception("type error")
+        raise RuntimeError("term is not a tuple: {}".format(term))
 
 
 def interpret_first(term: First, env: Env) -> Value:
@@ -84,16 +84,19 @@ def interpret_second(term: Second, env: Env) -> Value:
 
 
 def convert_value_to_print(value: Value) -> str:
+    if value['kind'] == 'boolean':
+        return 'true' if value['value'] else 'false'
 
-    if value['kind'] in ['boolean', 'string', 'number']:
+    elif value['kind'] in ['string', 'number']:
         return str(value['value'])
+
     elif value['kind'] == 'closure':
         return "<#closure>"
+
     elif value['kind'] == 'tuple':
-        tuple_value = cast(TupleValue, value)
-        first_value = cast(Value, tuple_value['first'])
-        second_value = cast(Value, tuple_value['second'])
-        return convert_value_to_print(first_value) + ',' + convert_value_to_print(second_value)
+        first_value = cast(Value, value['first'])
+        second_value = cast(Value, value['second'])
+        return "({}, {})".format(convert_value_to_print(first_value), convert_value_to_print(second_value))
 
 
 def interpret_print(term: Print, env: Env) -> Value:
