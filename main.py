@@ -1,5 +1,6 @@
-import json
 import argparse
+import json
+from interpreter import Interpreter
 
 
 def main():
@@ -11,7 +12,10 @@ def main():
 
     args = parser.parse_args()
 
-    print(f'Hi, {args.json_path}')
+    with open(args.json_path, 'r') as file:
+        decoded_json = json.load(file)
+
+        Interpreter(decoded_json).run()
 
 
 if __name__ == '__main__':
