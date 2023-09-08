@@ -33,7 +33,8 @@ Os programas combination, fib e sum estão rodando.
 
 ## TODO
 
-- Tratamento e checagem de erros
-- Ajustes nas operação binárias
+- [x] Tratamento e checagem de erros
+- [x] Ajustes nas operação binárias
     - as aritméticas estão retornando floats
     - concatenação de string e int está dando erro
+- [ ] Fazer dockerfile
