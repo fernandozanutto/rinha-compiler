@@ -1,5 +1,5 @@
 import copy
-from typing import Self, cast
+from typing import cast
 
 from ast_types import *
 
@@ -12,74 +12,98 @@ class Closure(TypedDict):
     env: Env
 
 
-Value = \
-    ({'kind': "boolean", 'value': bool}
-     | {'kind': "string", 'value': str}
-     | {'kind': "number", 'value': int}
-     | {'kind': "closure", 'value': Closure}
-     | {'kind': "tuple", 'fst': Self, 'snd': Self})
+class BaseValue(TypedDict):
+    kind: str
 
 
-def interpret_int(term: Int, env) -> dict:
+class StringValue(BaseValue):
+    value: str
+
+
+class BooleanValue(BaseValue):
+    value: bool
+
+
+class IntValue(BaseValue):
+    value: int
+
+
+class ClosureValue(BaseValue):
+    value: Closure
+
+
+class TupleValue(BaseValue):
+    first: BaseValue
+    second: BaseValue
+
+
+Value = TupleValue | ClosureValue | BooleanValue | IntValue | StringValue
+
+
+def interpret_int(term: Int, _) -> IntValue:
     return {'kind': 'int', 'value': term['value']}
 
 
-def interpret_str(term: Str, env) -> dict:
+def interpret_str(term: Str, _) -> StringValue:
     return {'kind': 'string', 'value': term['value']}
 
 
-def interpret_bool(term: Bool, env):
+def interpret_bool(term: Bool, _) -> BooleanValue:
     return {'kind': 'boolean', 'value': term['value']}
 
 
-def interpret_if(term: If, env):
+def interpret_if(term: If, env: Env) -> Value:
     condition = interpret(term['condition'], env)
     return interpret(term['then'] if condition['value'] else term['otherwise'], env)
 
 
-def interpret_tuple(term: Tuple, env):
+def interpret_tuple(term: Tuple, env: Env) -> TupleValue:
     first = interpret(term['first'], env)
     second = interpret(term['second'], env)
 
     return {'kind': 'tuple', 'first': first, 'second': second}
 
 
-def assert_tuple(term: Tuple):
+def assert_tuple(term: TupleValue):
     if term['kind'] != 'tuple':
         raise Exception("type error")
 
 
-def interpret_first(term: First, env):
+def interpret_first(term: First, env: Env) -> Value:
     tuple_value = interpret(term, env)
     assert_tuple(tuple_value)
 
-    return cast(Tuple, tuple_value)['first']
+    return cast(Value, cast(TupleValue, tuple_value)['first'])
 
 
-def interpret_second(term, env):
+def interpret_second(term: Second, env: Env) -> Value:
     tuple_value = interpret(term, env)
     assert_tuple(tuple_value)
 
-    return cast(Tuple, tuple_value)['second']
+    return cast(Value, cast(TupleValue, tuple_value)['second'])
 
 
-def convert_value_to_print(value: Value):
+def convert_value_to_print(value: Value) -> str:
+
     if value['kind'] in ['boolean', 'string', 'number']:
         return str(value['value'])
     elif value['kind'] == 'closure':
         return "<#closure>"
     elif value['kind'] == 'tuple':
-        return convert_value_to_print(value['first']) + ',' + convert_value_to_print(value['second'])
+        tuple_value = cast(TupleValue, value)
+        first_value = cast(Value, tuple_value['first'])
+        second_value = cast(Value, tuple_value['second'])
+        return convert_value_to_print(first_value) + ',' + convert_value_to_print(second_value)
 
 
-def interpret_print(term: Print, env):
+def interpret_print(term: Print, env: Env) -> Value:
     result = interpret(term['value'], env)
     print(convert_value_to_print(result))
 
     return result
 
 
-def interpret_var(term: Var, env: dict):
+def interpret_var(term: Var, env: Env) -> Value:
     value = env.get(term['text'])
 
     if value is None:
@@ -88,7 +112,7 @@ def interpret_var(term: Var, env: dict):
     return value
 
 
-def interpret_let(term: Let, env: dict):
+def interpret_let(term: Let, env: Env) -> Value:
     new_env = copy.deepcopy(env)
 
     value = interpret(term['value'], new_env)
@@ -98,13 +122,17 @@ def interpret_let(term: Let, env: dict):
     return interpret(term['next'], new_env)
 
 
-def interpret_call(term: Call, env: dict):
-    func: Value = interpret(term['callee'], env)
-
-    if func['kind'] != 'closure':
+def assert_closure(value: Value) -> Closure:
+    if value['kind'] != 'closure':
         raise Exception("type error: not closure")
 
-    closure: Closure = func['value']
+    return cast(Closure, value['value'])
+
+
+def interpret_call(term: Call, env: Env) -> Value:
+    func = interpret(term['callee'], env)
+
+    closure = assert_closure(func)
 
     if len(closure['parameters']) != len(term['arguments']):
         raise Exception("different args number")
@@ -119,7 +147,7 @@ def interpret_call(term: Call, env: dict):
     return interpret(closure['body'], fun_env)
 
 
-def interpret_binary_op(left: Value, right: Value, op: BinaryOp):
+def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
     binary_op_dict = {
         'Add': lambda l, r: l + r,
         'Sub': lambda l, r: l - r,
@@ -154,21 +182,21 @@ def interpret_binary_op(left: Value, right: Value, op: BinaryOp):
     }
 
 
-def interpret_binary(term: Binary, env: dict):
+def interpret_binary(term: Binary, env: Env) -> Value:
     left = interpret(term['lhs'], env)
     right = interpret(term['rhs'], env)
 
     return interpret_binary_op(left, right, term['op'])
 
 
-def interpret_function(term: Function, env: dict):
+def interpret_function(term: Function, env: Env) -> Value:
     return {
         'kind': 'closure',
         'value': {'body': term['value'], 'env': env, 'parameters': list(map(lambda x: x['text'], term['parameters']))}
     }
 
 
-def interpret(term: Term, env: Env):
+def interpret(term: Term, env: Env) -> Value:
     interpreter_dict = {
         'Int': interpret_int,
         'Str': interpret_str,
