@@ -164,22 +164,23 @@ def add_values(left: Value, right: Value) -> Value:
         return {'kind': 'string', 'value': str(left['value']) + str(right['value'])}
 
 
-def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
-    binary_op_dict = {
-        'Sub': lambda l, r: l - r,
-        'Mul': lambda l, r: l * r,
-        'Div': lambda l, r: l // r,
-        'Rem': lambda l, r: l % r,
-        'Eq': lambda l, r: l == r,
-        'Neq': lambda l, r: l != r,
-        'Lt': lambda l, r: l < r,
-        'Gt': lambda l, r: l > r,
-        'Lte': lambda l, r: l <= r,
-        'Gte': lambda l, r: l >= r,
-        'And': lambda l, r: l and r,
-        'Or': lambda l, r: l or r
-    }
+binary_op_dict = {
+    'Sub': lambda l, r: l - r,
+    'Mul': lambda l, r: l * r,
+    'Div': lambda l, r: l // r,
+    'Rem': lambda l, r: l % r,
+    'Eq': lambda l, r: l == r,
+    'Neq': lambda l, r: l != r,
+    'Lt': lambda l, r: l < r,
+    'Gt': lambda l, r: l > r,
+    'Lte': lambda l, r: l <= r,
+    'Gte': lambda l, r: l >= r,
+    'And': lambda l, r: l and r,
+    'Or': lambda l, r: l or r
+}
 
+
+def interpret_binary_op(left: Value, right: Value, op: BinaryOp) -> Value:
     if op == 'Add':
         return add_values(left, right)
 
@@ -232,25 +233,25 @@ def interpret_function(term: Function, env: Env) -> Value:
     }
 
 
+interpreter_dict = {
+    'Int': interpret_int,
+    'Str': interpret_str,
+    'Call': interpret_call,
+    'Binary': interpret_binary,
+    'Function': interpret_function,
+    'Let': interpret_let,
+    'If': interpret_if,
+    'Print': interpret_print,
+    'First': interpret_first,
+    'Second': interpret_second,
+    'Bool': interpret_bool,
+    'Tuple': interpret_tuple,
+    'Var': interpret_var
+}
+
+
 def interpret(term: Term, env: Env) -> Value:
-    interpreter_dict = {
-        'Int': interpret_int,
-        'Str': interpret_str,
-        'Call': interpret_call,
-        'Binary': interpret_binary,
-        'Function': interpret_function,
-        'Let': interpret_let,
-        'If': interpret_if,
-        'Print': interpret_print,
-        'First': interpret_first,
-        'Second': interpret_second,
-        'Bool': interpret_bool,
-        'Tuple': interpret_tuple,
-        'Var': interpret_var
-    }
-
     kind = term['kind']
-
     return interpreter_dict[kind](term, env)
 
 
