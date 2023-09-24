@@ -10,11 +10,17 @@ Python interpreter para a [Rinha de Compiler](https://github.com/aripiprazole/ri
 git clone git@github.com:fernandozanutto/rinha-compiler.git
 ```
 
-### With Docker (WIP)
+### With Docker
 
 ```
 docker build -t rinha .
-docker run rinha
+docker run -v /path/to/json:/var/rinha/source.rinha.json rinha
+```
+
+Example running `combination.json` file:
+
+```
+docker run -v ./files/combination.json:/var/rinha/source.rinha.json rinha
 ```
 
 ### CLI
@@ -37,4 +43,4 @@ Os programas combination, fib e sum estão rodando.
 - [x] Ajustes nas operação binárias
     - as aritméticas estão retornando floats
     - concatenação de string e int está dando erro
-- [ ] Fazer dockerfile
+- [x] Fazer dockerfile
